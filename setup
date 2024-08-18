@@ -9,7 +9,6 @@ curl https://raw.githubusercontent.com/mtwtkman/devkit/main/devkit -o devkit
 chmod +x devkit
 echo "Create Containerfile at ${devkit_dir}"
 ./devkit init
-./devkit help
 echo "Done setup for devkit."
 popd
-
+./devkit help
