@@ -49,6 +49,7 @@ ARG GROUP_NAME
 ARG APP_DIR
 ARG SHELL
 ARG PS1_HEAD
+ENV PS1_HEAD=\$PS1_HEAD
 RUN yes | pacman -Sy unzip sudo
 RUN groupadd --gid \$GROUP_ID \$GROUP_NAME
 RUN useradd --gid \$GROUP_ID --shell \$SHELL --uid \$USER_ID --create-home \$USER_NAME
@@ -72,7 +73,7 @@ function build_container()
     --build-arg GROUP_ID="${group_id}" \
     --build-arg GROUP_NAME="${group_name}" \
     --build-arg SHELL="${SHELL}" \
-    --build-arg PS1_HEAD="[${dev_name}]" \
+    --build-arg PS1_HEAD=\"\e[1;33m[ ${dev_name}]\e[0m\" \
     ${here}"
 }
 
