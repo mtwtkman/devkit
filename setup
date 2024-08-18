@@ -10,5 +10,5 @@ chmod +x devkit
 echo "Create Containerfile at ${devkit_dir}"
 ./devkit init
 echo "Done setup for devkit."
-popd
 ./devkit help
+popd
