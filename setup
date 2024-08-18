@@ -1,0 +1,12 @@
+#!/bin/sh
+devkit_dir="${DEVKIT_DIR:-devkit}"
+if [ ! -d "${devkit_dir}" ]; then
+  echo "Create ${devkit_dir}"
+  mkdir "${devkit_dir}"
+fi
+pushd ${devkit_dir}
+curl https://raw.githubusercontent.com/mtwtkman/devkit/main/devkit -o devkit
+chmod +x devkit
+echo "Create Containerfile at ${devkit_dir}"
+./devkit init
+popd

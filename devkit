@@ -15,6 +15,35 @@ if [ "${DEBUG}" = "true" ]; then
   set -e
 fi
 
+function generate_container_file()
+{
+  cat << EOF > "Containerfile"
+FROM archlinux:latest
+
+ARG USER_ID
+ARG USER_NAME
+ARG GROUP_ID
+ARG GROUP_NAME
+ARG APP_DIR
+ARG SHELL
+ARG PS1_HEAD
+RUN yes | pacman -Sy unzip sudo
+RUN groupadd --gid $GROUP_ID $GROUP_NAME
+RUN useradd \
+  --gid $GROUP_ID \
+  --shell $SHELL \
+  --uid $USER_ID \
+  --create-home \
+  $USER_NAME
+RUN echo "$USER_NAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers
+RUN su $USER_NAME -
+RUN mkdir -p $APP_DIR
+RUN chown $USER_NAME:$GROUP_NAME $APP_DIR
+WORKDIR $APP_DIR
+RUN curl https://raw.githubusercontent.com/mtwtkman/mi/main/setup | sh -s
+EOF
+}
+
 function build_container()
 {
   podman build \
@@ -86,6 +115,7 @@ function rebuild_image()
 cmd=$1
 shift
 case "${cmd}" in
+  init) generate_container_file;;
   build) build_container;;
   run) run_container;;
   create) create_container;;
