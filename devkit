@@ -36,7 +36,6 @@ if [ "${container_manager}" = "autodetect" ]; then
 else
   ! command -v "${container_manager}" > /dev/null && echo "${container_manager} is not executable" && exit 1
 fi
-echo "Use ${container_manager} as a container manager"
 
 function generate_container_file()
 {
