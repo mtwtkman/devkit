@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ "${DEBUG}" = "true" ]; then
+  set -x
+  set -e
+fi
+
 here="$(readlink -m $(dirname ${BASH_SOURCE[0]}))"
 workspace=$(dirname ${here})
 project_name=$(basename ${workspace})
@@ -9,11 +14,29 @@ user_name="${DEV_USER_NAME:-$(id -run)}"
 group_id="${DEV_GROUP_ID:-$(id -rg)}"
 group_name="${DEV_GROUP_NAME:-$(id -rgn)}"
 app_dir="${APP_DIR:-/var/app}"
+container_manager="${CONTAINER_MANAGER:-autodetect}"
 
-if [ "${DEBUG}" = "true" ]; then
-  set -x
-  set -e
+declare -a allowed_container_manager=(
+  "podman"
+  "docker"
+)
+
+if [ "${container_manager}" = "autodetect" ]; then
+  for c in "${allowed_container_manager[@]}"
+  do
+    if command -v "${c}" > /dev/null; then
+      container_manager="${c}"
+      break
+    fi
+  done
+  if [ "${container_manager}" = "autodetect" ]; then
+    echo "Cannot find any valid container managers"
+    exit 1
+  fi
+else
+  ! command -v "${container_manager}" > /dev/null && echo "${container_manager} is not executable" && exit 1
 fi
+echo "Use ${container_manager} as a container manager"
 
 function generate_container_file()
 {
@@ -46,7 +69,7 @@ EOF
 
 function build_container()
 {
-  podman build \
+  eval "${container_manager} build \
     --rm \
     -t ${dev_name} \
     --build-arg APP_DIR="${app_dir}" \
@@ -56,12 +79,12 @@ function build_container()
     --build-arg GROUP_NAME="${group_name}" \
     --build-arg SHELL="${SHELL}" \
     --build-arg PS1_HEAD="[${dev_name}]" \
-    ${here}
+    ${here}"
 }
 
 function run_container()
 {
-  podman run \
+  eval "${container_manager} run \
     --tty \
     --interactive \
     --userns=keep-id \
@@ -69,40 +92,40 @@ function run_container()
     --user="${user_name}" \
     --name="${dev_name}" \
     "${dev_name}" \
-    bash
+    bash"
 }
 
 function create_container()
 {
-  podman create \
+  eval "${contaienr_manager} create \
     --userns=keep-id \
     --volume="${workspace}":"${app_dir}"\
     --user="${user_name}" \
     --name="${dev_name}" \
     "${dev_name}" \
-    bash
+    bash"
 }
 
 function enter_container()
 {
-  podman start ${dev_name}
-  podman exec \
+  eval "${container_manager} start ${dev_name}"
+  eval "${container_manager} exec \
     --tty \
     --interactive \
     --detach-keys= \
     "${dev_name}" \
-    bash
+    bash"
 }
 
 function kill_container()
 {
-  podman stop "${dev_name}" > /dev/null
-  podman rm "${dev_name}" > /dev/null
+  eval "${container_manager} stop "${dev_name}" > /dev/null"
+  eval "${container_manager} rm "${dev_name}" > /dev/null"
 }
 
 function rmi()
 {
-  podman rmi ${dev_name} > /dev/null
+  eval "${container_manager} rmi ${dev_name} > /dev/null"
 }
 
 function rebuild_image()
@@ -110,6 +133,22 @@ function rebuild_image()
   kill_container
   rmi
   build_container
+}
+
+function usage()
+{
+  indent="  "
+  echo "usage: devkit <command>"
+  echo "These are some commands for manipulating your dev container depends on ${container_manager}"
+  echo ""
+  echo -e "${indent}init\t\t\tGenerate a Containerfile"
+  echo -e "${indent}build\t\t\tCreate a dev container image named ${dev_name}"
+  echo -e "${indent}run\t\t\tCreate and attach to a dev container named ${dev_name}"
+  echo -e "${indent}create\t\tCreate a dev container named ${dev_name}"
+  echo -e "${indent}enter\t\t\tAttach to created dev container"
+  echo -e "${indent}rerun\t\t\tRerun a new dev container after removing created container"
+  echo -e "${indent}kill | destroy\tRemove created dev container"
+  echo -e "${indent}reboot\t\tRebuild a dev container image and run it"
 }
 
 cmd=$1
@@ -132,6 +171,7 @@ case "${cmd}" in
     run_container
     ;;
   *)
+    usage
     exit 0
     ;;
 esac
