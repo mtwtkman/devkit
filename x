@@ -4,10 +4,10 @@ workspace=$(dirname ${here})
 project_name=$(basename ${workspace})
 image="${DEV_IMAGE:-archlinux:latest}"
 dev_name="${DEV_NAME:-${project_name}-dev}"
-user_id="${POI_DEV_USER_ID:-$(id -ru)}"
-user_name="${POI_DEV_USER_NAME:-$(id -run)}"
-group_id="${POI_DEV_GROUP_ID:-$(id -rg)}"
-group_name="${POI_DEV_GROUP_NAME:-$(id -rgn)}"
+user_id="${DEV_USER_ID:-$(id -ru)}"
+user_name="${DEV_USER_NAME:-$(id -run)}"
+group_id="${DEV_GROUP_ID:-$(id -rg)}"
+group_name="${DEV_GROUP_NAME:-$(id -rgn)}"
 app_dir="${APP_DIR:-/var/app}"
 
 if [ "${DEBUG}" = "true" ]; then
@@ -26,6 +26,7 @@ function build_container()
     --build-arg GROUP_ID="${group_id}" \
     --build-arg GROUP_NAME="${group_name}" \
     --build-arg SHELL="${SHELL}" \
+    --build-arg PS1_HEAD="[${dev_name}]" \
     ${here}
 }
 

@@ -6,6 +6,7 @@ ARG GROUP_ID
 ARG GROUP_NAME
 ARG APP_DIR
 ARG SHELL
+ARG PS1_HEAD
 RUN yes | pacman -Sy unzip sudo
 RUN groupadd --gid $GROUP_ID $GROUP_NAME
 RUN useradd \
@@ -19,3 +20,4 @@ RUN su $USER_NAME -
 RUN mkdir -p $APP_DIR
 RUN chown $USER_NAME:$GROUP_NAME $APP_DIR
 WORKDIR $APP_DIR
+RUN curl https://raw.githubusercontent.com/mtwtkman/mi/main/setup | sh -s
