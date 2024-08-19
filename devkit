@@ -118,16 +118,41 @@ function kill_container()
   eval "${container_manager} rm "${dev_name}" > /dev/null"
 }
 
-function rmi()
+function remove_image()
 {
-  eval "${container_manager} rmi ${dev_name} > /dev/null"
+  image_name="${1:-${dev_name}}"
+  eval "${container_manager} rmi ${image_name} > /dev/null"
 }
 
 function rebuild_image()
 {
   kill_container
-  rmi
+  remove_image
   build_container
+}
+
+commit_image()
+{
+  image_name="${1}"
+  container_id="$(eval "${container_manager} ps -a --filter name=${dev_name} --format {{.ID}}")"
+  eval "${container_manager} commit ${container_id} ${image_name}"
+}
+
+tag_image()
+{
+  src="${1}"
+  dest="${2}"
+  eval "${container_manager} tag ${src} ${dest}"
+}
+
+update_image()
+{
+  temp_name="${dev_name}-commit-temp"
+  commit_image "${temp_name}"
+  kill_container
+  remove_image
+  tag_image "${temp_name}" "${dev_name}"
+  remove_image "${temp_name}"
 }
 
 function usage()
@@ -140,13 +165,14 @@ function usage()
   echo -e "${indent}build\t\t\tCreate a dev container image named ${dev_name}"
   echo -e "${indent}run\t\t\tCreate and attach to a dev container named ${dev_name}"
   echo -e "${indent}create\t\tCreate a dev container named ${dev_name}"
-  echo -e "${indent}enter\t\t\tAttach to created dev container"
+  echo -e "${indent}enter\t\t\tAttach to a created dev container"
   echo -e "${indent}rerun\t\t\tRerun a new dev container after removing created container"
-  echo -e "${indent}kill | destroy\tRemove created dev container"
+  echo -e "${indent}kill | destroy\tRemove a created dev container"
+  echo -e "${indent}cleanup\t\tRemove a dev container image"
   echo -e "${indent}rebuild\t\tRebuild a dev container image"
   echo -e "${indent}reboot\t\tRebuild a dev container image and run it"
+  echo -e "${indent}update\t\tUpdate a dev container image to current container state"
 }
-
 cmd=$1
 shift
 case "${cmd}" in
@@ -160,12 +186,16 @@ case "${cmd}" in
     run_container
     ;;
   kill|destroy) kill_container;;
-  cleanup) rmi;;
+  cleanup)
+    kill_container
+    remove_image
+    ;;
   rebuild) rebuild_image;;
   reboot)
     rebuild_image
     run_container
     ;;
+  update) update_image;;
   *)
     usage
     exit 0
