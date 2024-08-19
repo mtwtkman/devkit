@@ -143,6 +143,7 @@ function usage()
   echo -e "${indent}enter\t\t\tAttach to created dev container"
   echo -e "${indent}rerun\t\t\tRerun a new dev container after removing created container"
   echo -e "${indent}kill | destroy\tRemove created dev container"
+  echo -e "${indent}rebuild\t\tRebuild a dev container image"
   echo -e "${indent}reboot\t\tRebuild a dev container image and run it"
 }
 
